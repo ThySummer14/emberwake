@@ -1,0 +1,52 @@
+extends SceneTree
+const Main=preload("res://web/web_main.gd")
+var passed:=0
+var failed:=0
+func check(ok:bool,label:String) -> void:
+	if ok:passed+=1;print("PASS ",label)
+	else:failed+=1;print("FAIL ",label)
+func _initialize() -> void:call_deferred("run")
+func run() -> void:
+	# The runner supplies an isolated XDG_DATA_HOME; never use a player's data directory.
+	DirAccess.remove_absolute(Main.SAVE)
+	var game=Main.new();root.add_child(game);game.set_process(false)
+	game._web_input(["menu:999"])
+	check(game.mode=="title" and not game.journey_active,"invalid menu index cannot start or reset a journey")
+	game._web_input(["menu:invalid"])
+	check(game.mode=="title" and not game.journey_active,"malformed menu index cannot fall back to New Game")
+	game._web_input(["menu:0"])
+	check(game.mode=="play" and game.journey_active,"HTML menu starts the normal journey")
+	for i in range(30):game._process(1.0/60)
+	var start_x:float=game.core.player.pos.x
+	game._web_input(["right",true]);Input.flush_buffered_events()
+	game._web_input(["jump",true]);Input.flush_buffered_events()
+	check(Input.is_action_pressed("right") and game.pending.get("jump_press",false),"multitouch movement and jump reach held state and real input event")
+	game._process(1.0/60)
+	check(game.core.player.pos.x>start_x and game.core.player.vel.y<0,"simultaneous touch starts an actual moving jump")
+	game._web_input(["jump",false]);Input.flush_buffered_events()
+	check(game.pending.get("jump_release",false) and Input.is_action_pressed("right"),"releasing jump buffers short-jump release without dropping movement")
+	game._web_input(["blur"])
+	check(game.mode=="pause" and not Input.is_action_pressed("right") and game.pending.is_empty(),"browser interruption pauses and releases held and pending actions")
+	check(game.save_exists and game.web_save_count>=2,"start and focus interruption use normal save lifecycle")
+	game.core.sparks=77;game._web_input(["menu:0"])
+	check(game.mode=="play" and game.core.sparks==77,"HTML resume preserves the existing journey")
+	game._web_input(["attack",true]);Input.flush_buffered_events()
+	check(game.pending.get("attack_press",false),"touch attack enters normal buffered combat input")
+	game._web_input(["down",true]);game._web_input(["dash",true]);Input.flush_buffered_events()
+	check(Input.is_action_pressed("down") and game.pending.get("dash_press",false),"direction plus dash reaches the existing breaker contract")
+	game._web_input(["quit",true]);check(not game.web_held.has("quit"),"unrecognized shell action is rejected")
+	game._web_input(["blur"]);game.write_save()
+	var save_before:=FileAccess.get_file_as_bytes(Main.SAVE)
+	game.mode="title";game.journey_active=false
+	game._web_input(["blur"])
+	check(game.mode=="title" and FileAccess.get_file_as_bytes(Main.SAVE)==save_before,"title blur does not overwrite a progressed save")
+	game.dialog_return="title";game.mode="dialog";game._web_input(["blur"])
+	check(game.mode=="dialog" and FileAccess.get_file_as_bytes(Main.SAVE)==save_before,"title help survives focus loss without changing save")
+	game.mode="title";game.start_game(true)
+	check(game.core.sparks==77 and game.mode=="play","Web adapter uses the same saved checkpoint data on Continue")
+	game._release_web_inputs(true)
+	game.audio.music.stop()
+	for voice in game.audio.voices:voice.stop()
+	game.queue_free();await process_frame;await process_frame
+	print("WEB_ADAPTER_RESULT ",passed," passed; ",failed," failed")
+	quit(1 if failed else 0)

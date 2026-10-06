@@ -46,7 +46,7 @@
 - `art/`：原始创作图、提示记录与历史素材制作脚本
 - `docs/ART_PROVENANCE.md`：素材来源；字体许可在 `godot/licenses/`
 - `docs/VALIDATION.md`：验证范围与限制
-- `builds/pack_source_hashes.json`：已交付 0.8.1 的 55 个运行资源 SHA-256；仓库中的对应资源逐一相同
+- `builds/pack_source_hashes.json`：当前原生包的 55 个运行资源 SHA-256；54 项与已交付 0.8.1 相同，project.godot 仅新增 Web 启动场景覆盖
 
 Godot 内 440 项当前断言通过；独立复核共 456 项，包含相同的 440 项及 16 项额外检查。自动路线/策略不等同于真人手感测试。音频设备在原生测试中回退到静音驱动，因此没有可听混音验证。
 
@@ -58,4 +58,8 @@ godot --headless --path godot --script res://tests/build_pack.gd
 
 产物为 `builds/Emberwake.pck`。Linux 下安装 Godot 4.6.3、Python 3 和 `timeout` 后，可运行 `bash godot/tests/run_checks.sh`。这套测试脚本通过 XDG 临时目录隔离本机存档，仅按 Linux 流程验证过；不要直接用它测试已有个人 Mac 存档。
 
-本仓库没有部署工作流。既有试玩检查点保留。
+Web 编译产物单独发布到 gh-pages 分支，main 保留可编辑工程和构建步骤。既有试玩检查点保留。
+
+## 网页与手机试玩
+
+本工程附带 Godot 4.6.3 单线程网页导出与触屏操作层。操作、存档限制、构建步骤和验证范围见 [网页说明](docs/WEB.md)。当前网页适配沿用 0.8.1 的游戏内容。

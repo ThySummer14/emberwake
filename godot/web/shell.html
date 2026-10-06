@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101b24">
+<title>EMBERWAKE · 余烬回潮</title>
+<link rel="stylesheet" href="shell.css">
+$GODOT_HEAD_INCLUDE
+</head>
+<body>
+<main id="app">
+  <header><div><strong>EMBERWAKE</strong><span>余烬回潮 · 0.8.1 网页试玩</span></div><nav aria-label="游戏工具"><button id="sound" aria-label="切换声音">声音</button><button id="fullscreen">全屏</button><button data-action="map">地图</button><button data-action="pause">暂停</button></nav></header>
+  <section id="stage" class="booting" aria-label="游戏画面">
+    <canvas id="canvas" width="640" height="360" tabindex="0" aria-label="余烬回潮游戏，键盘或屏幕按键操作">浏览器需要支持 Canvas 与 WebGL 2。</canvas>
+    <div id="loading" role="status"><div class="gate"><span class="eyebrow">带一盏灯，走自己的路</span><h1>余烬回潮</h1><p id="load-text">首次打开需要下载游戏。建议连接 Wi-Fi。</p><progress id="progress" max="1" value="0"></progress><button id="start">载入游戏</button><p class="small">原生 Godot 游戏 · 无需登录<br>手机建议横屏，电脑可使用键盘或手柄</p></div></div>
+  </section>
+  <section id="menu-panel" aria-label="游戏菜单" hidden><p id="menu-heading"></p><div id="menu-options"></div></section>
+  <section id="reading-panel" aria-label="故事与提示" hidden><h2 id="reading-title"></h2><p id="reading-text"></p><button data-action="interact">继续旅途</button></section>
+  <section id="touch-deck" aria-label="触屏操作" hidden>
+    <div id="direction-pad" aria-label="方向盘，可滑动并同时按跳跃或挥刃"><span class="pad-up">↑</span><span class="pad-left">←</span><span class="pad-center">移动</span><span class="pad-right">→</span><span class="pad-down">↓</span><i id="stick"></i></div>
+    <div class="utility"><button data-action="interact">交互</button><button data-action="heal">按住<br>疗愈</button></div>
+    <div class="combat"><button data-action="attack">挥刃</button><button data-action="dash">冲刺</button><button data-action="jump" class="jump">跳跃</button></div>
+  </section>
+  <footer><p id="save-status" aria-live="polite">进度仅保存在当前浏览器。无痕模式或清理网站数据可能丢失进度。</p><p id="help">方向 + 挥刃：上挑 / 下劈；获得落砧环后，空中 ↓ + 冲刺。<br><span>键盘：A/D 移动 · 空格跳跃 · J 挥刃 · K 冲刺 · E 交互 · 按住 Q 疗愈</span></p><a href="https://github.com/ThySummer14/emberwake" target="_blank" rel="noopener">工程与运行说明</a><span aria-hidden="true"> · </span><a href="LICENSES.txt">许可与素材说明</a></footer>
+</main>
+<script src="$GODOT_URL"></script>
+<script>window.EMBERWAKE_CONFIG=$GODOT_CONFIG;window.EMBERWAKE_THREADS=$GODOT_THREADS_ENABLED;</script>
+<script src="shell.js"></script>
+</body>
+</html>
