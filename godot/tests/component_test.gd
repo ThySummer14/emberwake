@@ -1,0 +1,43 @@
+extends SceneTree
+const Core=preload("res://scripts/core.gd")
+const Pressure=preload("res://scripts/pressure_cell.gd")
+const Breaker=preload("res://scripts/breaker_motion.gd")
+var passed:=0
+var failed:=0
+func check(condition:bool,label:String) -> void:
+	if condition:passed+=1;print("PASS ",label)
+	else:failed+=1;print("FAIL ",label)
+func _initialize() -> void:
+	var cell=Pressure.new()
+	check(not cell.active() and cell.state()=="fill","fresh room pressure starts safe")
+	cell.step(1.10);check(cell.state()=="warning" and cell.warning_shutters()==1,"fill transitions into a full explicit warning")
+	cell.step(.30);check(cell.warning_shutters()==2,"warning has a second visible shutter beat")
+	cell.step(.30);check(cell.warning_shutters()==3 and not cell.active(),"third warning beat remains non-damaging")
+	cell.step(.29);check(not cell.active(),"no damage before complete warning")
+	cell.step(.01);check(cell.active(),"discharge begins only after all warning beats")
+	check(cell.hurts(Rect2(380,370,14,24)) and not cell.hurts(Rect2(200,370,14,24)),"only authored lane damages")
+	var before:float=cell.elapsed;cell.step(99,true);check(cell.elapsed==before and cell.active(),"pause freezes pressure instead of skipping cues")
+	cell.step(.65);check(cell.state()=="rest" and not cell.active(),"discharge releases a safe rest")
+	cell.step(1.35);check(cell.state()=="fill" and cell.cycles==1,"cycle returns to safe fill")
+	cell.enabled=false;cell.step(99);check(not cell.active() and cell.state()=="vented","permanent venting disables pressure")
+	var c=Core.new();c.enter_room("hall",Vector2(300,300));c.enemies.clear();c.player.grounded=false
+	var b=Breaker.new();var press={"down":true,"dash_press":true}
+	check(not b.request(press,c.player,false,0),"breaker cannot begin before ownership")
+	c.player.grounded=true;check(not b.request(press,c.player,true,0),"grounded down-dash does not queue a breaker")
+	c.player.grounded=false;c.player.hurt=.1;check(not b.request(press,c.player,true,0),"hurt input cannot queue a delayed slam")
+	c.player.hurt=0;check(not b.request(press,c.player,true,.05),"motion controller cannot activate inside hitstop; intent is coordinated by the core")
+	check(not b.request({"down":true,"attack_press":true},c.player,true,0),"down-attack remains separate from breaker input")
+	check(b.request(press,c.player,true,0) and c.player.air_dash,"valid airborne down-dash commits air-dash allowance")
+	check(b.state=="windup" and b.velocity(1).y==0,"breaker has a readable tuck before descending")
+	b.step(.12,c.player);check(b.state=="fall" and b.velocity(1)==Vector2(50,640),"committed descent has bounded speed and steering")
+	var plate:=Rect2(300,392,96,16)
+	check(b.crossed_seal(Rect2(330,330,14,38),Rect2(330,415,14,38),plate),"swept downward crossing catches even a thin plate")
+	check(not b.crossed_seal(Rect2(330,415,14,38),Rect2(330,330,14,38),plate),"rising through plate cannot trigger breaker")
+	check(not b.crossed_seal(Rect2(100,330,14,38),Rect2(100,415,14,38),plate),"unrelated horizontal lane cannot break seal")
+	check(c.player.invuln<=.75,"breaker has not granted generic hazard invulnerability")
+	b.land();check(b.state=="recovery","landing has a distinct recovery")
+	b.step(.18,c.player);check(b.state=="idle","recovery returns control")
+	c.player.air_dash=false;c.player.dash_cd=0;b.request(press,c.player,true,0);c.player.hurt=.1;b.step(.016,c.player)
+	check(b.state=="idle","being hit cancels a committed breaker")
+	print("ROOTFOUNDRY_SYSTEM_RESULT ",passed," passed; ",failed," failed")
+	quit(1 if failed else 0)
