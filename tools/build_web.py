@@ -11,8 +11,9 @@ for suffix in ['DATA','CACHE','CONFIG']:
  key='XDG_'+suffix+'_HOME'
  if key not in env:env[key]=str(root/'.build-xdg'/suffix.lower())
  Path(env[key]).mkdir(parents=True,exist_ok=True)
-subprocess.run(['godot','--headless','--path',str(project),'--editor','--import'],env=env,check=True,timeout=90)
-subprocess.run(['godot','--headless','--path',str(project),'--export-release','Web',str(out/'index.html')],env=env,check=True,timeout=90)
+timeout=int(os.environ.get('WEB_BUILD_TIMEOUT','90'))
+subprocess.run(['godot','--headless','--path',str(project),'--editor','--import'],env=env,check=True,timeout=timeout)
+subprocess.run(['godot','--headless','--path',str(project),'--export-release','Web',str(out/'index.html')],env=env,check=True,timeout=timeout)
 for name in ['shell.css','shell.js','LICENSES.txt']:shutil.copy2(project/'web'/name,out/name)
 (out/'.nojekyll').write_text('')
 files={p.name:{'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for p in sorted(out.iterdir()) if p.is_file() and p.name!='build-manifest.json'}
